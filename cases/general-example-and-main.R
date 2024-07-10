@@ -1,11 +1,12 @@
 library(kableExtra)
 
-gg1_comp.df <- lapply(scenario_list_2v[4], function(pars) {
+#Daily infections
+gg1_comp.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
-    "Status quo" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
-    "Immediate" = list_modify(pars, e1 = 0.8, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
-    "100 days" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
-    "1 year" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,100),rep(0.5,Ndays-100)))) %>%
+    "Status quo" = list_modify(pars, e1 = default_e, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
+    "Immediate" = list_modify(pars, e1 = default_e, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
+    "100 days" = list_modify(pars, e1 = default_e, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
+    "1 year" = list_modify(pars, e1 = default_e, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,365),rep(0.5,Ndays-365)))) %>%
     lapply(sr, f = "bsa") %>%
     lapply(rescale_rcs, pop, merge=T) %>%
     abind::abind()
@@ -16,6 +17,7 @@ gg1_comp.df <- lapply(scenario_list_2v[4], function(pars) {
   gather(var, value, -time, -scenario) %>%
   mutate(var = factor(var))
 
+#Daily number of antiviral doses required in each scenario
 gg2_comp.df <- gg1_comp.df %>% mutate(value=round(default_pbsa*value*world_pop))
 gg2_comp.df$month <- NA
 for(scen in unique(gg2_comp.df$var)){
@@ -27,15 +29,16 @@ for(scen in unique(gg2_comp.df$var)){
   }
   gg2_comp.df$month[gg2_comp.df$var==scen] <- rep(1:ceiling(Ndays/30), each = 30)[1:Ndays]
 }
-gg2_comp.df <- gg2_comp.df %>% select(month,var,value) %>% group_by(var,month) %>% 
+gg2_comp.df <- gg2_comp.df %>% select(month,var,value) %>% group_by(var,month) %>%
   mutate(value=sum(value)) %>% ungroup() %>% unique() %>% filter(var!="Status quo")
 
-gg3_comp.df <- lapply(scenario_list_2v[4], function(pars) {
+#Cumulative deaths
+gg3_comp.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
-    "Status quo" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
-    "Immediate" = list_modify(pars, e1 = 0.8, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
-    "100 days" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
-    "1 year" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,100),rep(0.5,Ndays-100)))) %>%
+    "Status quo" = list_modify(pars, e1 = default_e, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
+    "Immediate" = list_modify(pars, e1 = default_e, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
+    "100 days" = list_modify(pars, e1 = default_e, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
+    "1 year" = list_modify(pars, e1 = default_e, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,365),rep(0.5,Ndays-365)))) %>%
     lapply(sr, f = "bsa") %>%
     lapply(rescale_rcs, pop, merge=T) %>%
     abind::abind()
@@ -46,12 +49,13 @@ gg3_comp.df <- lapply(scenario_list_2v[4], function(pars) {
   gather(var, value, -time, -scenario) %>%
   mutate(var = factor(var))
 
-gg4_comp.df <- lapply(scenario_list_2v[4], function(pars) {
+#Cumulative infections
+gg4_comp.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
-    "Status quo" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
-    "Immediate" = list_modify(pars, e1 = 0.8, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
-    "100 days" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
-    "1 year" = list_modify(pars, e1 = 0.8, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,100),rep(0.5,Ndays-100)))) %>%
+    "Status quo" = list_modify(pars, e1 = default_e, delta1=rep(1,Ndays), delta2=rep(1,Ndays)),
+    "Immediate" = list_modify(pars, e1 = default_e, delta1=rep(1.5,Ndays), delta2=rep(0.5,Ndays)),
+    "100 days" = list_modify(pars, e1 = default_e, delta1=c(rep(1,100),rep(1.5,Ndays-100)), delta2=c(rep(1,100),rep(0.5,Ndays-100))),
+    "1 year" = list_modify(pars, e1 = default_e, delta1=c(rep(1,365),rep(1.5,Ndays-365)), delta2=c(rep(1,365),rep(0.5,Ndays-365)))) %>%
     lapply(sr, f = "bsa") %>%
     lapply(rescale_rcs, pop, merge=T) %>%
     abind::abind()
@@ -63,8 +67,7 @@ gg4_comp.df <- lapply(scenario_list_2v[4], function(pars) {
   mutate(var = factor(var))
 
 gg1_comp <- gg1_comp.df %>% select(var,value,time) %>% unique() %>%  
-  # mutate(var=factor(var,levels=c("None","0.25%","0.50%","1.00%"))) %>% 
-  ggplot(aes(x = time, y = 100*value)) + #facet_wrap(.~scenario, scales = "free") +#, linetype=var
+  ggplot(aes(x = time, y = 100*value)) +
   geom_line(aes(color=var))+
   xlab("Time (days)") + scale_x_continuous(breaks = seq(0, Ndays, 120)) + ylab("Current infections (% pop.)")+
 lightness(scale_color_brewer(name = "Scenario", palette = "RdGy",direction = 1),scalefac(0.85))
@@ -80,13 +83,6 @@ gg2_comp <- gg2_comp.df %>%
                                                                legend.key.size = unit(0.4, "cm"))
 
 write_csv(gg2_comp.df %>% rename(scenario=var,doses=value),"results/monthly_antiviral_doses.csv")
-
-gg1 <- gg1.df %>%
-  mutate(var=factor(var,levels=c("None","0.25%","0.50%","1.00%"))) %>% 
-  ggplot(aes(x = time, y = 100*value, color = var)) + geom_line() + facet_wrap(.~scenario, scales = "free") +#, linetype=var
-  xlab("Time (days)") + scale_x_continuous(breaks = seq(0, 360, 120)) + ylab("Current infections (% pop.)") +
-  lightness(scale_color_brewer(palette = "YlOrRd",direction = 1,breaks = c("None","0.25%","0.50%","1.00%")),scalefac(0.85))+
-  theme(legend.position = "none")
 
 gg3_comp <- gg3_comp.df %>% select(value,time,var) %>% unique() %>%  
   ggplot(aes(x = time, y = 100*value)) +

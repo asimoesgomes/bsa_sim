@@ -2,15 +2,24 @@ library(stats)
 library(MASS)
 library(EnvStats)
 library(cascsim)
+library(doParallel)
+library(parallel)
+
+# cl <- makePSOCKcluster(4)
+# registerDoParallel(cl)
 
 select <- dplyr::select
-
 #Assumed distribution for reproduction number
-R0_draw <- rtri(1000,0.5,2.8,(0.5+2.8)/2)
+R0_draw <- rtri(100,0.5,2.8,(0.5+2.8)/2)
 #Assumed distribution for CFR
-#cfr_draw <- #rtbeta(n, shape1, shape2, ncp = 0, min = 0, max = 1) - not sure what to assume as shape1 and 2
+#alpha/(alpha+beta)=0.01 (mean)
+shape1<-0.14
+shape2<-(1-0.01)/0.01*shape1
+# qtbeta(0.999, shape1, shape2, ncp = 0, min = 0, max = 0.24) - Found through iteration
 
-exp_ben <- function(model, tbsa, R0, cfr=1, rm = FALSE) {
+cfr_draw <- rtbeta(100, shape1, shape2, min = 0, max = 0.24) # not sure what to assume as shape1 and 2
+#TIME: 2.9h with 100*100*2=20000 simulations
+exp_ben <- function(model, tbsa, R0, cfr, rm = FALSE) {
   d1 <- 1.5
   d2 <- 0.5
   e <- 0.8
@@ -21,11 +30,11 @@ exp_ben <- function(model, tbsa, R0, cfr=1, rm = FALSE) {
   d2 <- rep(d2,Ndays)
   d2[1:tbsa]<-1
   
-  R_weighted <- mean(R_series[R_series>0][1:7])/R0*R_series
+  R_weighted <- R0/mean(R_series[R_series>0][1:7])*R_series
   q <- matrix(rep(array(as.numeric(lapply(R_weighted,r0))),Ngroups),Ndays,Ngroups)
   
-  #pdeath <- rep(cfr,Ngroups)
-  pdeath <- default_pdeath
+  pdeath <- rep(cfr,Ngroups)
+  # pdeath <- default_pdeath
   
   y <- sr(list_modify(pars, pdeath=pdeath, q=q, e1 = e, delta1=d1, delta2=d2), "bsa")
   if(rm) return(y)
@@ -34,20 +43,32 @@ exp_ben <- function(model, tbsa, R0, cfr=1, rm = FALSE) {
 
 ##Iterating over sampled R0s and CFRs for reference case (50% protection available after 100 days)----
 
+# registerDoParallel(4)  # use multicore, set to the number of our cores
 
+start.time <- Sys.time()
+# iter_args <- expand_grid(tbsa=c(100,Ndays),
+#             R0=R0_draw,
+#             cfr=cfr_draw,
+#             model = "pars_le_covid")
+# foreach (i=1:dim(iter_args)[1]) %dopar% {
+#   iter_arg <- iter_args[i,]
+# }
 df_r0_cfr_raw.base_eff_grid <- expand_grid(tbsa=c(100,Ndays),
                                                    R0=R0_draw,
-                                                   #cfr=cfr_draw,
+                                                   cfr=cfr_draw,
                                                    model = "pars_le_covid") %>%
-  mutate(data = pmap(list(model, tbsa, R0), function(x, o, q) data.frame(value = exp_ben(x, o, q), 
+  mutate(data = pmap(list(model, tbsa, R0, cfr), function(x, o, q, u) data.frame(value = exp_ben(x, o, q, u), 
                                                                                     var = metric_nms)))  %>%
   unnest(data) %>%
   spread(var, value) %>%
   #mutate(nab_factor = factor(round(e,3),levels=round(effs,3),labels=nab_factor_mod)) %>% 
-  group_by(R0)  %>%#group_by(R0, cfr)  %>%
-  mutate(d_rel=1-d/max(d)) %>%
+  group_by(R0, cfr)  %>%
+  mutate(d_rel=1-d/max(d)) %>% 
   mutate(tbsa = factor(tbsa, levels = c(100,Ndays),
-                       labels = c("100 day mission","Default"))) 
+                     labels = c("100 day mission","Default")))
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
 
 df_r0_cfr_raw.base_eff_grid <- df_r0_cfr_raw.base_eff_grid %>%
   mutate(econ_loss = exp(0.74+0.46*log(d*1000/(Ndays/365)))) %>% 
@@ -55,10 +76,10 @@ df_r0_cfr_raw.base_eff_grid <- df_r0_cfr_raw.base_eff_grid %>%
   # gather(var, value, -R0, -cfr, -tbsa) %>%
   # mutate(raw_value = value) %>%
   # group_by(R0,cfr,var) %>%
-  select(R0, tbsa, i,d,d_rel,harm, econ_loss) %>%
-  gather(var, value, -R0, -tbsa) %>%
+  select(R0, cfr, tbsa, i,d,d_rel, econ_loss) %>%
+  gather(var, value, -R0, -cfr, -tbsa) %>%
   mutate(raw_value = value) %>%
-  group_by(R0,var) %>%
+  group_by(R0,cfr,var) %>%
   mutate(ref = value[tbsa == "Default"]) %>%
   ungroup() %>%
   mutate(r = (value/ref)) %>% 
@@ -76,3 +97,28 @@ df_r0_cfr_raw.base_eff_grid <- df_r0_cfr_raw.base_eff_grid %>%
 mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Deaths") %>% unique())$raw_value)
 #Without antivirals
 mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Deaths") %>% unique())$raw_value)
+#Benefits - averted deaths
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Deaths") %>% unique())$raw_value)-
+  mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Deaths") %>% unique())$raw_value))*
+  1.3e6*curr_pop
+#Benefits - economic loss
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Economic Loss") %>% unique())$raw_value)-
+    mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Economic Loss") %>% unique())$raw_value))*
+  101.3e12#2022 values
+#Benefits - learning loss
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Economic Loss") %>% unique())$raw_value)-
+    mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Economic Loss") %>% unique())$raw_value))*
+  10/13.8*101.3e12#2022 values
+#Total
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Deaths") %>% unique())$raw_value)-
+    mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Deaths") %>% unique())$raw_value))*
+  1.3e6*curr_pop+
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Economic Loss") %>% unique())$raw_value)-
+    mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Economic Loss") %>% unique())$raw_value))*
+  101.3e12+
+(mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa!="100 day mission"&var=="Economic Loss") %>% unique())$raw_value)-
+    mean((df_r0_cfr_raw.base_eff_grid %>% filter(tbsa=="100 day mission"&var=="Economic Loss") %>% unique())$raw_value))*
+  10/13.8*101.3e12
+
+
+write_csv(df_r0_cfr_raw.base_eff_grid,'results/sims_exp_benefits.csv')

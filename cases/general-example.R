@@ -1,6 +1,7 @@
 library(kableExtra)
 
-gg1.df <- lapply(scenario_list_2v[4], function(pars) {
+#Daily infections
+gg1.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
     "0.25%" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays))) %>%
     lapply(sr, f = "bsa") %>%
@@ -16,7 +17,8 @@ gg1.df <- lapply(scenario_list_2v[4], function(pars) {
                            labels = c("Covid epidemic")),
          owid=vax_owid$new_cases_smoothed_per_million/10000)
 
-gg2.df <- lapply(scenario_list_2v[4], function(pars) {
+#Cumulative vaccinations
+gg2.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
     "0.25%" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays))) %>%
     lapply(sr, f = "bsa") %>%
@@ -29,9 +31,11 @@ gg2.df <- lapply(scenario_list_2v[4], function(pars) {
   gather(var, value, -time, -scenario) %>%
   mutate(scenario = factor(scenario,
                            levels = c("Covid epidemic"),
-                           labels = c("Covid epidemic")))
+                           labels = c("Covid epidemic")),
+         owid=vax_owid$people_vaccinated_per_hundred)
 
-gg3.df <- lapply(scenario_list_2v[4], function(pars) {
+#Cumulative deaths
+gg3.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
     "0.25%" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays))) %>%
     lapply(sr, f = "bsa") %>%
@@ -47,7 +51,8 @@ gg3.df <- lapply(scenario_list_2v[4], function(pars) {
                            labels = c("Covid epidemic")),
          owid=vax_owid$total_deaths_per_million/10000)
 
-gg4.df <- lapply(scenario_list_2v[4], function(pars) {
+#Cumulative infections
+gg4.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
     "0.25%" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays))) %>%
     lapply(sr, f = "bsa") %>%
@@ -64,15 +69,15 @@ gg4.df <- lapply(scenario_list_2v[4], function(pars) {
          owid=vax_owid$total_cases_per_million/10000)
 
 gg1 <- gg1.df %>% select(scenario,value,time,owid) %>% unique() %>%  
-  # mutate(var=factor(var,levels=c("None","0.25%","0.50%","1.00%"))) %>% 
-  ggplot(aes(x = time, y = 100*value)) + geom_line() + #facet_wrap(.~scenario, scales = "free") +#, linetype=var
+  ggplot(aes(x = time, y = 100*value)) + geom_line() +
   geom_line(aes(y=owid),linetype = "dashed",color="red")+
   xlab("Time (days)") + scale_x_continuous(breaks = seq(0, Ndays, 120)) + ylab("Current infections (% pop.)")
   # lightness(scale_color_brewer(palette = "YlOrRd",direction = 1,breaks = c("None","0.25%","0.50%","1.00%")),scalefac(0.85))+
   # theme(legend.position = "none")
 
-gg2 <- gg2.df %>% select(value,time) %>% unique() %>%  
-    ggplot(aes(x = time, y = 100*value)) + geom_line(linetype = "dashed",color="red") +
+gg2 <- gg2.df %>% select(value,time,owid) %>% unique() %>%  
+    ggplot(aes(x = time, y = 100*value)) + geom_line() +
+    geom_line(aes(y=owid),linetype = "dashed",color="red")+
     xlab("Time (days)") + scale_x_continuous(breaks = seq(0, Ndays, 120)) +
     ylab("Cumulative vaccinations (% pop.)")
     # lightness(scale_color_brewer(palette = "YlOrRd",direction = 1,breaks = c("None","0.25%","0.50%","1.00%")),scalefac(0.85))+
@@ -108,4 +113,3 @@ g1_joint <- ggarrange(
   gg3 + ggtitle("Deaths") +
     theme(text = element_text(size=9)),
   ncol=1)
-

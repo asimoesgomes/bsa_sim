@@ -27,6 +27,7 @@ grab_2v_parms <- function(model){
   if(model == "pars_le_fast") pars <- pars_le_fast
   if(model == "pars_le_late") pars <- pars_le_late
   if(model == "pars_le_covid") pars <- pars_le_covid
+  if(model == "pars_le_covid_mob") pars <- pars_le_covid_mob
   pars
 }
 grab_2d_parms <- function(model){
@@ -73,6 +74,11 @@ sr <- function(pars, f = "2v_v2") {
     cnames <- c("S", "E", "Inbsa", "Ibsa_pre", "Ibsa_post", "Rnbsa", "Rbsa", "R", "Dnbsa", "Dbsa", "D", "P1", 
                 "N1", "P2", "N2", "cumV1", "cumV2", "cumV", "cumI", "I")
   }
+  if(f == "bsa_mob") {
+    mod <- odin_ode_2dose_bsa_mob_v1(user = pars)
+    cnames <- c("S", "E", "Inbsa", "Ibsa_pre", "Ibsa_post", "Rnbsa", "Rbsa", "R", "Dnbsa", "Dbsa", "D", "P1", 
+                "N1", "P2", "N2", "cumV1", "cumV2", "cumV", "cumI", "I")
+  }
   if(f == "2v") {
     mod <- odin_ode_2vaccines(user = pars)
     cnames <- c("S", "E", "I", "R", "D", "P1", "N1", "P2", "N2", "cumV1", "cumV2", "cumI")
@@ -103,13 +109,40 @@ y0_gen <- function(Nc, Ngroups,
   if(Nc==20){
     I=20
     R=8
-    y0_default[3,] <- (y0_default[1,]*ii)/4
-    y0_default[4,] <- (y0_default[1,]*ii)/4
+    y0_default[3,] <- (y0_default[1,]*ii)/2
+    #y0_default[4,] <- (y0_default[1,]*ii)/4
   }
   y0_default[I,] <- (y0_default[1,]*ii)/2
   # subtract initial infections
   y0_default[S,] <- y0_default[1,] - y0_default[2,]
   y0_default[R,] <- pre_immunity
+  y0_default
+}
+
+y0_gen_mob <- function(Nc, Ngroups, Ncountries, 
+                   pre_immunity = rep(0, Ngroups),
+                   # v = rep(0, Ngroups), 
+                   ii = 5e-03, 
+                   S = 1, E = 2, I = 3, R = 4){
+  
+  I=20
+  R=8
+  
+  y0_default <- array(0, c(Nc, Ngroups, Ncountries))
+  rel_pop <- pop_continents/curr_pop
+  
+  for(j in 1:Ncountries){
+    y0_default[S,,j] <- rel_pop[j] -pre_immunity
+    y0_default[E,,j] <- ii[j]/2
+    
+    y0_default[3,,j] <- ii[j]/2
+    #y0_default[4,,j] <- ii[j]/4
+    
+    y0_default[I,,j] <- ii[j]/2
+    # subtract initial infections
+    y0_default[S,,j] <- y0_default[1,,j] - ii[j]
+    y0_default[R,,j] <- pre_immunity
+  }
   y0_default
 }
 
@@ -166,12 +199,12 @@ main_metrics <- function(y, pop, vat = 31) {
   c("i" = b_any(y, pop, "cumI"), 
     "d" = b_any(y, pop, "D"), 
     "v1" = v1, 
-    "tt50" = tthi(y, pop),
+    "tt50" = tthi(y, pop))
     # Benefit integral, over vaccinations only:
     # "harm_v"  = 1-benefit(y, pop),
-    "harm_vr" = harm(y))
+    #"harm_vr" = harm(y))
 }
-metric_nms <- c("i", "d", "v1", "tt50", "harm")
+metric_nms <- c("i", "d", "v1", "tt50")#, "harm")
 
 
 check0sums <- function(x, maxC=14) {

@@ -5,18 +5,14 @@ library(latex2exp)
 library(shades)
 library(grid)
 theme_set(theme_minimal(base_size = 10))
-# # source("R/ode_2doses.R")
-# source("R/ode_2doses_v2.R")
-# source("R/ode_2doses_v3.R")
-# # source("R/ode_2vaccines.R")
-source("R/ode_2vaccines_v2.R")
+
+
 source("R/ode_2dose_bsa_v1.R")
 source("R/ode_2dose_bsa_mob.R")
 source("R/helpers.R")
 source("R/output-helpers.R")
 source("R/scenario-parms.R")
-source("R/harm_function.R")
-source("R/prioritisation.R")
+
 
 as.percent <- function(x, d=2, perc=FALSE){
   if (perc) paste0(format(round(100*x, d), nsmall = d),'%')

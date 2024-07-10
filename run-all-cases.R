@@ -1,16 +1,17 @@
-# list_countries <- scan("data/list_countries.txt", what="", sep="\n")
-
-list_countries <- c('OWID_WRL')#c("ARG","BEL","BRA","CAN","COL","COM","ESP","DEU","ISR","ITA","USA","ZAF","CHN","IND","KEN")
+list_countries <- c('OWID_WRL')
+#'OWID_WRL' runs the version with a single region (world) while 'all' runs the version with cross-continent mobility
 
 for(countrylevel in list_countries){
   start.time <- Sys.time()
   source("project-setup.R")
 
-  # source("cases/prep-results.R")
-  # source("cases/general-example.R")
-  # source("cases/general-example-and-main.R")
-  source("cases/expected_benefits.R")
-  # source("cases/lower_efficacy_baseline_grid.R")
+  source("cases/prep-results.R")
+  source("cases/general-example.R")
+  
+  source("cases/general-example-and-main.R")
+  # source("cases/expected_benefits.R")
+  source("cases/lower_efficacy_baseline_grid.R")
+  source("cases/bsa_sens_takeup.R")
 
   if(countrylevel=="OWID_WRL"){
     fig_folder <- "figures/"
