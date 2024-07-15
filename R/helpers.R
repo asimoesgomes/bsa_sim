@@ -75,6 +75,7 @@ sr <- function(pars, f = "2v_v2") {
                 "N1", "P2", "N2", "cumV1", "cumV2", "cumV", "cumI", "I")
   }
   if(f == "bsa_mob") {
+    conts <- 1:(pars$Ncountries)
     mod <- odin_ode_2dose_bsa_mob_v1(user = pars)
     cnames <- c("S", "E", "Inbsa", "Ibsa_pre", "Ibsa_post", "Rnbsa", "Rbsa", "R", "Dnbsa", "Dbsa", "D", "P1", 
                 "N1", "P2", "N2", "cumV1", "cumV2", "cumV", "cumI", "I")
@@ -88,10 +89,18 @@ sr <- function(pars, f = "2v_v2") {
     cnames <- c("S", "E", "I", "R", "D", "P1", "N1", "P2", "N2", "cumV1", "cumV2", "cumV", "cumI")
   }
   
-  y <- array(mod$run(times)[,-1], 
-             dim = c(max(times), pars$Ngroups, pars$Nc), 
-             dimnames = list(times, gnames, cnames)) %>%
-    aperm(c(1, 3, 2))
+  if(f == "bsa_mob"){
+    y <- array(mod$run(times)[,-1], 
+               dim = c(max(times), pars$Ngroups, pars$Ncountries, pars$Nc), 
+               dimnames = list(times, gnames, conts, cnames)) %>%
+      aperm(c(1, 4, 3, 2))
+  } else {
+    y <- array(mod$run(times)[,-1], 
+               dim = c(max(times), pars$Ngroups, pars$Nc), 
+               dimnames = list(times, gnames, cnames)) %>%
+      aperm(c(1, 3, 2))
+  }
+  return(y)
 }
 
 

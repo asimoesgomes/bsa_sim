@@ -25,14 +25,14 @@ pars_fdf_slow <- lst(
   y0 = y0_gen(13, Ngroups, pre_immunity, 1.085e-05),#Initial values (last argument is initial number of infected individuals)
   q = rep(r0(1.1), Ngroups),#reproduction number
   contacts = default_cm,#contact matrix
-  gamma1 = rep(.2, Ngroups), #(inverse) duration of exposure period
+  gamma1 = rep(.2, Ngroups), #(inverse) duration of exposure period 0.2
   gammaT = rep(0.5, Ngroups), #(inverse) time from infection until taking antivirals
-  gamma2 = rep(.18, Ngroups), #(inverse) duration of infectious period
+  gamma2 = rep(.18, Ngroups), #(inverse) duration of infectious period 0.18
   delta1 = rep(1, Ngroups),#antiviral protection against transmission
   delta2 = rep(1, Ngroups),#antiviral protection against death
   kappa1 = rep(kappa_default, Ngroups),#reinfection rate after first dose of vaccine
   kappa2 = rep(kappa_default, Ngroups),#reinfection rate after second dose of vaccine
-  phi = rep(0, Ngroups), #reinfection rate after recovery from infection
+  phi = rep(1/100, Ngroups), #reinfection rate after recovery from infection
   ta = rep(0, Ngroups),#start date of vaccinations (not used currently - using OWID time series)
   e1 = rep(default_e, Ngroups),#default 
   e2 = rep(default_e2, Ngroups),
@@ -68,9 +68,11 @@ pars_le_covid <- list_modify(pars_fdf_slow,
                             q=matrix(rep(array(as.numeric(lapply(R_series,r0))),Ngroups),Ndays,Ngroups))
 
 #Parameters for model with antiviral and cross-continent dynamics
+i0_cont <- ((vax_owid %>% arrange(date,iso_code))$total_cases[1:Ncountries])/curr_pop
+i0_cont[is.na(i0_cont)]<-1e-20
 pars_le_covid_mob <- list_modify(pars_fdf_slow,
                              y0 = y0_gen_mob(20, Ngroups, Ncountries, pre_immunity, 
-                                             ii=((vax_owid %>% arrange(date,iso_code))$total_cases[1:Ncountries])/curr_pop),
+                                             ii=i0_cont),
                              Nc = 20,
                              Ncountries = Ncountries,
                              mob=mob,

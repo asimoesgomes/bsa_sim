@@ -6,6 +6,16 @@ model_i <- function(model, d1, d2, e, tbsa, ode_model="bsa",rm = FALSE) {
   d2[1:tbsa]<-1
   y <- sr(list_modify(pars, e1 = e, delta1=d1, delta2=d2), ode_model)
   if(rm) return(y)
+  if(ode_model=="bsa_mob"){
+    y.full <- main_metrics(y[,,1,], pop)
+    for(i in 2:Ncountries){
+      y.full <- rbind(y.full,main_metrics(y[,,i,], pop))
+    }
+    rownames(y.full)<-1:dim(y.full)[1]
+    y.full <- data.frame(y.full)
+    y.full['cont']<-sort(iso_code_continents)
+    return(y.full)
+  }
   main_metrics(y, pop)
 }
 # 
