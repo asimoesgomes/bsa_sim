@@ -1,6 +1,8 @@
 library(kableExtra)
 
 #Daily infections
+owid_cases <- read_csv("data/new_cases.csv") %>% arrange(date) %>% 
+  filter(date>=start_date&date<end_date)
 gg1.df <- lapply(scenario_list_2v[1], function(pars) {
   ll <- list(
     "0.25%" = list_modify(pars, e1 = 0.8, delta1=rep(1,Ndays), delta2=rep(1,Ndays))) %>%
@@ -15,7 +17,7 @@ gg1.df <- lapply(scenario_list_2v[1], function(pars) {
   mutate(scenario = factor(scenario,
                            levels = c("Covid epidemic"),
                            labels = c("Covid epidemic")),
-         owid=vax_owid$new_cases_smoothed_per_million/10000)
+         owid=owid_cases$World/curr_pop*100)#vax_owid$new_cases_per_million/10000)
 
 #Cumulative vaccinations
 gg2.df <- lapply(scenario_list_2v[1], function(pars) {

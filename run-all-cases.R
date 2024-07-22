@@ -6,14 +6,14 @@ for(countrylevel in list_countries){
   source("project-setup.R")
 
   source("cases/prep-results.R")
-  source("cases/general-example.R")
-  
-  source("cases/general-example-and-main.R")
-  # source("cases/expected_benefits.R")
-  source("cases/lower_efficacy_baseline_grid.R")
-  source("cases/bsa_sens_takeup.R")
 
   if(countrylevel=="OWID_WRL"){
+    source("cases/general-example.R")
+    
+    source("cases/general-example-and-main.R")
+    source("cases/expected_benefits.R")
+    source("cases/lower_efficacy_baseline_grid.R")
+    source("cases/bsa_sens_takeup.R")
     fig_folder <- "figures/"
   } else if(countrylevel=="all"){
     source("cases/country_level_mobility.R")

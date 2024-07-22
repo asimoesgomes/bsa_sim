@@ -3,6 +3,7 @@
 # A few inputs needed to generate other parameters -----
 # We use pbc_spread and default_cm from the default data inputs file
 library(tidyverse)
+library(TTR)
 load("data/default_inputs.Rdata")
 
 #Testing new contact matrix data - estimated separately for each country - not used currently
@@ -64,16 +65,22 @@ if(countrylevel=="OWID_WRL"){
     mutate(people_partially_vax=people_vaccinated-people_fully_vaccinated)
   
   period_size <- as.numeric(max(vax_owid$date)-min(vax_owid$date))+1#+1 to include day 1
-  new_v1 <- c(0,diff(vax_owid$people_partially_vax,lag=1))/(unique(vax_owid$population))
+  new_v1 <- c(0,diff(vax_owid$people_partially_vax,lag=1))/(unique(vax_owid$population)*5)#Trick to approximate vaccination curve better
   new_v1[new_v1<0] <- 0
   new_v1[is.na(new_v1)] <- 0
   new_v2 <- c(0,diff(vax_owid$people_fully_vaccinated,lag=1))/(unique(vax_owid$population))
   new_v2[is.na(new_v2)] <- 0
+  # new_v1 <- vax_owid$new_vaccinations/unique(vax_owid$population)
+  # new_v1[is.na(new_v1)] <- 0
+  # new_v2 <- lag(new_v1,14)/unique(vax_owid$population)
+  # new_v2[is.na(new_v2)] <- 0
 }
 
 #Time series of the reproduction number
 R_series <- vax_owid_world$reproduction_rate
 R_series[is.na(R_series)] <- 0
+R_series_smooth <- SMA(R_series, n = 30)
+R_series_smooth[is.na(R_series_smooth)] <- R_series_smooth[!is.na(R_series_smooth)][1]
 
 #Matrix with mobility between regions
 #Just a placeholder for now 

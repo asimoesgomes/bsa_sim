@@ -114,17 +114,17 @@ y0_gen <- function(Nc, Ngroups,
                    S = 1, E = 2, I = 3, R = 4){
   y0_default <- matrix(0, Nc, Ngroups)
   y0_default[S,] <- 1-pre_immunity
-  y0_default[E,] <- (y0_default[1,]*ii)/2
+  y0_default[E,] <- 2*(y0_default[S,]*ii)/4
   if(Nc==20){
     I=20
     R=8
-    y0_default[3,] <- (y0_default[1,]*ii)/2
+    y0_default[3,] <- 2*(y0_default[S,]*ii/4)#(y0_default[1,]*ii)/2
     #y0_default[4,] <- (y0_default[1,]*ii)/4
   }
-  y0_default[I,] <- (y0_default[1,]*ii)/2
+  y0_default[I,] <- (y0_default[S,]*ii)/4
   # subtract initial infections
-  y0_default[S,] <- y0_default[1,] - y0_default[2,]
-  y0_default[R,] <- pre_immunity
+  y0_default[R,] <- y0_default[S,]*ii#pre_immunity
+  y0_default[S,] <- y0_default[S,] - y0_default[E,]-y0_default[I,]-y0_default[R,]
   y0_default
 }
 

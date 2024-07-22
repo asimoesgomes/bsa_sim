@@ -82,7 +82,7 @@ gg2_comp <- gg2_comp.df %>%
                                                                legend.text = element_text(size=9),
                                                                legend.key.size = unit(0.4, "cm"))
 
-write_csv(gg2_comp.df %>% rename(scenario=var,doses=value),"results/monthly_antiviral_doses.csv")
+write_csv(gg2_comp.df %>% dplyr::rename(scenario=var,doses=value),"results/monthly_antiviral_doses.csv")
 
 gg3_comp <- gg3_comp.df %>% select(value,time,var) %>% unique() %>%  
   ggplot(aes(x = time, y = 100*value)) +
